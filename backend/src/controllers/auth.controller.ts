@@ -23,8 +23,30 @@ const registerValidationSchema = Yup.object({
     fullName: Yup.string().required(),
     username: Yup.string().required(),
     email: Yup.string().email().required(),
-    password: Yup.string().required(),
-    confirmPassword: Yup.string().required().oneOf([Yup.ref('password'), ''], 'confirmPassword must match password'),
+    password: Yup.string().required()
+        .min(6, 'Password must be at least 6 characters long')
+        .test(
+            'at-least-one-uppercase-letter',
+            'Password must have at least 1 uppercase letter',
+            (value) => {
+                if(!value) return false;
+                const regex = /^(?=.*[A-Z])/;
+                return regex.test(value);
+            }
+        )
+        .test(
+            'at-least-one-number',
+            'Password must have at least 1 number',
+            (value) => {
+                if(!value) return false;
+                const regex = /^(?=.*\d)/;
+                return regex.test(value);
+            }
+        ),
+    confirmPassword: Yup.string().required().oneOf(
+        [Yup.ref('password'), ''],
+        'confirmPassword must match password',
+    ),
 });
 
 const loginValidationSchema = Yup.object({
@@ -34,11 +56,14 @@ const loginValidationSchema = Yup.object({
 
 export default {
     register: async (req: Request, res: Response) => {
+        /**
+         #swagger.tags = ['Auth']
+         */
         const {fullName, username, email, password, confirmPassword} = req.body as TRegisterPayload;
         try {
             await registerValidationSchema.validate({fullName, username, email, password, confirmPassword});
             
-            const createdUser = await UserModel.create({fullName, username, email, password})
+            const createdUser = await UserModel.create({fullName, username, email, password});
             return res.status(200).json({message: 'Registration success', data: createdUser});
         } catch (error) {
             const err = error as Error;
@@ -47,6 +72,7 @@ export default {
     },
     login: async (req: Request, res: Response) => {
         /**
+         #swagger.tags = ['Auth']
          #swagger.requestBody = {
             required: true,
             schema: {$ref: "#/components/schemas/LoginRequest"}
@@ -62,6 +88,7 @@ export default {
                     {email: identifier},
                     {username: identifier},
                 ],
+                isActive: true,
             });
 
             if(!userByIdentifier) {
@@ -86,6 +113,7 @@ export default {
     },
     me: async (req: IRequestUser, res: Response) => {
         /**
+         #swagger.tags = ['Auth']
          #swagger.security = [{
             "bearerAuth": []
          }]
@@ -94,6 +122,30 @@ export default {
             const user = req.user;
             const result = await UserModel.findById(user?.id);
             res.status(200).json({message: 'User profile successfully fetched', data: result})
+        } catch (error) {
+            const err = error as Error;
+            res.status(400).json({message: err.message, data: null});
+        }
+    },
+    activation: async (req: Request, res: Response) => {
+        /**
+         #swagger.tags = ['Auth']
+         #swagger.requestBody = {
+            required: true,
+            schema: {$ref: "#/components/schemas/ActivationRequest"}
+         }
+         */
+        try {
+            const {code} = req.body as {code: string};
+            const user = await UserModel.findOneAndUpdate(
+                // Fields to search
+                {activationCode: code},
+                // Fields to update
+                {isActive: true},
+                // Additional options
+                {new: true}
+            );
+            res.status(200).json({message: 'User successfully activated', data: user})
         } catch (error) {
             const err = error as Error;
             res.status(400).json({message: err.message, data: null});

@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import { encrypt } from "../utils/encryption";
+import { sendMail, renderMailHTML } from "../utils/mail/mail";
+import { CLIENT_HOST } from "../utils/env";
 
 export interface User {
     fullName: string,
@@ -10,6 +12,7 @@ export interface User {
     profilePicture: string,
     isActive: boolean,
     activationCode: string,
+    createdAt?: string,
 }
 
 const Schema = mongoose.Schema;
@@ -21,10 +24,12 @@ const UserSchema = new Schema<User>({
     username: {
         type: Schema.Types.String,
         required: true,
+        unique: true,
     },
     email: {
         type: Schema.Types.String,
         required: true,
+        unique: true,
     },
     password: {
         type: Schema.Types.String,
@@ -45,7 +50,6 @@ const UserSchema = new Schema<User>({
     },
     activationCode: {
         type: Schema.Types.String,
-        required: true,
     },
 }, 
 {
@@ -60,8 +64,37 @@ const UserSchema = new Schema<User>({
 UserSchema.pre('save', function(next) {
     const user = this;
     user.password = encrypt(user.password);
+    user.activationCode = encrypt(user.id);
     next();
 });
+
+UserSchema.post('save', async function(doc, next) {
+    try {
+        const user = doc;
+        const mailContent = await renderMailHTML(
+            'registration-success.ejs',
+            {
+                username: user.username,
+                fullName: user.fullName,
+                email: user.email,
+                createdAt: user.createdAt,
+                activationLink: `${CLIENT_HOST}/auth/activation?code=${user.activationCode}`,
+            }
+        );
+
+        await sendMail({
+            from: 'andhikangurah@zohomail.com', 
+            to: user.email,
+            subject: 'Aktivasi Akun Anda',
+            html: mailContent,
+        });
+    } catch (error) {
+        const err = error as Error;
+        console.log(err.message);
+    } finally {
+        next();
+    }
+})
 
 const UserModel = mongoose.model('User', UserSchema);
 export default UserModel;

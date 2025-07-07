@@ -21,6 +21,9 @@ const doc = {
             LoginRequest: {
                 identifier: 'andhika',
                 password: 'test123',
+            },
+            ActivationRequest: {
+                code: 'abcdef',
             }
         }
     },
