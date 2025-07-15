@@ -145,6 +145,11 @@ export default {
                 // Additional options
                 {new: true}
             );
+
+            if(!user) {
+                return res.status(400).json({message: 'Activation code is invalid', data: null});
+            }
+
             res.status(200).json({message: 'User successfully activated', data: user})
         } catch (error) {
             const err = error as Error;
