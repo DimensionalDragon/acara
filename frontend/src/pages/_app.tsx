@@ -4,6 +4,7 @@ import { NextUIProvider } from "@nextui-org/react";
 import { Inter } from "next/font/google";
 import { classname } from "@/utils/classname";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SessionProvider } from "next-auth/react";
 
 const inter = Inter({
   subsets: ['latin'],
@@ -19,17 +20,19 @@ const queryClient = new QueryClient({
   }
 });
 
-export default function App({ Component, pageProps }: AppProps) {
+export default function App({ Component, pageProps: {session, ...pageProps} }: AppProps) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <NextUIProvider>
-        <main className={classname(
-          inter.className,
-          'flex flex-col gap-10 min-h-screen min-w-full items-center justify-center py-10 lg:py-0',
-        )}>
-          <Component {...pageProps} />
-        </main>
-      </NextUIProvider>
-    </QueryClientProvider>
+    <SessionProvider session={session}>
+      <QueryClientProvider client={queryClient}>
+        <NextUIProvider>
+          <main className={classname(
+            inter.className,
+            'flex flex-col gap-10 min-h-screen min-w-full items-center justify-center py-10 lg:py-0',
+          )}>
+            <Component {...pageProps} />
+          </main>
+        </NextUIProvider>
+      </QueryClientProvider>
+    </SessionProvider>
   );
 }
