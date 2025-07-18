@@ -2,8 +2,9 @@ import { Response } from "express";
 import * as Yup from "yup";
 
 type Pagination = {
-    totalPage: number;
-    currentPage: number;
+    totalPages: number;
+    current: number;
+    total: number;
 }
 
 export default {

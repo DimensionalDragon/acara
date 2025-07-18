@@ -1,10 +1,14 @@
 import express from "express";
+
 import authController from "../controllers/auth.controller";
+import categoryController from "../controllers/category.controller";
+import mediaController from "../controllers/media.controller";
+
 import authMiddleware from "../middlewares/auth.middleware";
 import aclMiddleware from "../middlewares/acl.middleware";
 import mediaMiddleware from "../middlewares/media.middleware";
+
 import { ROLES } from "../utils/constants";
-import mediaController from "../controllers/media.controller";
 
 const router = express.Router();
 
@@ -13,6 +17,33 @@ router.post('/auth/register', authController.register);
 router.post('/auth/login', authController.login);
 router.get('/auth/me', authMiddleware, authController.me);
 router.post('/auth/activation', authController.activation);
+
+// Category management
+router.post(
+    '/category',
+    [authMiddleware, aclMiddleware([ROLES.ADMIN])],
+    categoryController.create
+);
+router.get(
+    '/category',
+    [authMiddleware, aclMiddleware([ROLES.ADMIN, ROLES.MEMBER])],
+    categoryController.findAll
+);
+router.get(
+    '/category/:id',
+    [authMiddleware, aclMiddleware([ROLES.ADMIN, ROLES.MEMBER])],
+    categoryController.findOne
+);
+router.put(
+    '/category/:id',
+    [authMiddleware, aclMiddleware([ROLES.ADMIN])],
+    categoryController.update
+);
+router.delete(
+    '/category/:id',
+    [authMiddleware, aclMiddleware([ROLES.ADMIN])],
+    categoryController.remove
+);
 
 // Media upload and handling
 router.post(
