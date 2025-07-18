@@ -4,7 +4,8 @@ import * as Yup from "yup";
 import UserModel from "../models/user.model";
 import { encrypt } from "../utils/encryption";
 import { generateToken } from "../utils/jwt";
-import { IRequestUser } from "../middlewares/auth.middleware";
+import { IRequestUser } from "../utils/interfaces";
+import response from "../utils/response";
 
 type TRegisterPayload = {
     fullName: string,
@@ -64,10 +65,9 @@ export default {
             await registerValidationSchema.validate({fullName, username, email, password, confirmPassword});
             
             const createdUser = await UserModel.create({fullName, username, email, password});
-            return res.status(200).json({message: 'Registration success', data: createdUser});
+            response.created(res, createdUser, 'Registration success');
         } catch (error) {
-            const err = error as Error;
-            res.status(400).json({message: err.message, data: null});
+            response.error(res, error, 'Registration failed');
         }
     },
     login: async (req: Request, res: Response) => {
@@ -92,12 +92,12 @@ export default {
             });
 
             if(!userByIdentifier) {
-                res.status(401).json({message: 'Credentials are incorrect', data: null});
+                response.unauthorized(res, 'Credentials are incorrect');
             }
 
             const isPasswordValid: boolean = encrypt(password) === userByIdentifier?.password;
             if(!isPasswordValid) {
-                res.status(401).json({message: 'Credentials are incorrect', data: null});
+                response.unauthorized(res, 'Credentials are incorrect');
             }
 
             const token = generateToken({
@@ -105,10 +105,9 @@ export default {
                 role: userByIdentifier!.role,
             });
 
-            res.status(200).json({message: 'Login success', data: token});
+            response.success(res, token, 'Login success');
         } catch (error) {
-            const err = error as Error;
-            res.status(400).json({message: err.message, data: null});
+            response.error(res, error, 'Login failed');
         }
     },
     me: async (req: IRequestUser, res: Response) => {
@@ -121,10 +120,9 @@ export default {
         try {
             const user = req.user;
             const result = await UserModel.findById(user?.id);
-            res.status(200).json({message: 'User profile successfully fetched', data: result})
+            response.success(res, result, 'User profile successfully fetched');
         } catch (error) {
-            const err = error as Error;
-            res.status(400).json({message: err.message, data: null});
+            response.error(res, error, 'Failed to fetch user profile');
         }
     },
     activation: async (req: Request, res: Response) => {
@@ -147,13 +145,13 @@ export default {
             );
 
             if(!user) {
-                return res.status(400).json({message: 'Activation code is invalid', data: null});
+                const error = new Error('Activation code is invalid');
+                return response.error(res, error, error.message);
             }
 
-            res.status(200).json({message: 'User successfully activated', data: user})
+            response.success(res, user, 'User successfully activated');
         } catch (error) {
-            const err = error as Error;
-            res.status(400).json({message: err.message, data: null});
+            response.error(res, error, 'Failed to activate user');
         }
     }
 }
