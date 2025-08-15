@@ -2,6 +2,7 @@ import { classname } from "@/utils/classname";
 import { Button, Listbox, ListboxItem } from "@nextui-org/react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { JSX } from "react";
 import { CiLogout } from "react-icons/ci";
@@ -47,6 +48,7 @@ const DashboardLayoutSidebar = (props: PropTypes) => {
                             className={
                                 classname('my-1 h-12 text-2xl', router.pathname.startsWith(item.href) ? 'bg-danger-500 text-white' : '')
                             }
+                            as={Link}
                             href={item.href}
                             startContent={item.icon}
                             textValue={item.label}
@@ -59,7 +61,7 @@ const DashboardLayoutSidebar = (props: PropTypes) => {
                 </Listbox>
             </div>
             <div className='flex items-center p-1'>
-                <Button color='danger' size='lg' fullWidth variant='light' className='flex justify-start rounded-lg px-2 py-1.5' onClick={() => signOut()}>
+                <Button color='danger' size='lg' fullWidth variant='light' className='flex justify-start rounded-lg px-2 py-1.5' onPress={() => signOut()}>
                     <CiLogout />
                     Logout
                 </Button>
