@@ -2,13 +2,32 @@ import DataTable from "@/components/ui/DataTable";
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@nextui-org/react";
 import Image from "next/image";
 import { useRouter } from "next/router";
-import { Key, ReactNode, useCallback } from "react";
+import { Key, ReactNode, useCallback, useEffect } from "react";
 import { CiMenuKebab } from "react-icons/ci";
 import { COLUMN_LIST_CATEGORY } from "./Category.constants";
-import { LIMIT_LISTS } from "@/constants/list.constants";
+import useCategory from "./useCategory";
+import FileInput from "@/components/ui/FileInput";
 
 const Category = () => {
     const router = useRouter();
+    const {
+        setUrl,
+        currentPage,
+        currentLimit,
+        categoryData,
+        isLoadingCategory,
+        isRefetchingCategory,
+        handleChangeLimit,
+        handleChangePage,
+        handleSearchChange,
+        handleSearchClear
+    } = useCategory();
+
+    useEffect(() => {
+        if (router.isReady) {
+            setUrl();
+        }
+    }, [router.isReady]);
 
     const renderCell = useCallback((category: Record<string, unknown>, columnKey: Key) => {
         const cellValue = category[columnKey as keyof typeof category];
@@ -42,23 +61,25 @@ const Category = () => {
 
     return (
         <section>
-            <DataTable
-                renderCell={renderCell}
-                columns={COLUMN_LIST_CATEGORY}
-                data={[
-                    { _id: '123', name: 'category 1', description: 'desc', icon: '/images/general/logo.png' }
-                ]}
-                emptyContent='Category is empty'
-                topContentButtonLabel='Create Category'
-                onTopContentButtonPress={() => console.log('Search pressed')}
-                onSearchClear={() => console.log('Search cleared')}
-                onSearchChange={(e) => console.log(e.target.value)}
-                limit={LIMIT_LISTS[0].label}
-                onChangeLimit={(e) => console.log(e.target.value)}
-                totalPages={2}
-                onChangePage={(page) => console.log(`Switch to page ${page}`)}
-                currentPage={1}
-            />
+            {Object.keys(router.query).length > 0 && (
+                <DataTable
+                    renderCell={renderCell}
+                    columns={COLUMN_LIST_CATEGORY}
+                    data={categoryData?.data || []}
+                    emptyContent='Category is empty'
+                    isLoading={isLoadingCategory || isRefetchingCategory}
+                    topContentButtonLabel='Create Category'
+                    onTopContentButtonPress={() => console.log('Category create button pressed')}
+                    onSearchClear={handleSearchClear}
+                    onSearchChange={handleSearchChange}
+                    limit={String(currentLimit)}
+                    onChangeLimit={handleChangeLimit}
+                    totalPages={categoryData?.pagination?.totalPages}
+                    onChangePage={handleChangePage}
+                    currentPage={Number(currentPage)}
+                />
+            )}
+            <FileInput name='category' isDroppable />
         </section>
     )
 }

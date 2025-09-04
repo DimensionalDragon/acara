@@ -13,7 +13,7 @@ const PageHead = (props: PropTypes) => {
             <title>{title}</title>
             <link rel="icon" href="/images/general/logo.svg" type='image/x-icon' />
         </Head>
-    )
+    );
 }
 
 export default PageHead;
